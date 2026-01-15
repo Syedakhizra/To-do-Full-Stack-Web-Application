@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: Todo Backend API
+  description: REST API for Todo Backend Core & Data Layer
+  version: 1.0.0
+  contact:
+    name: Todo API Support
+    email: support@todoapp.example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.todoapp.example.com
+    description: Production server
+
+paths:
+  /api/v1/tasks:
+    post:
+      summary: Create a new task
+      description: Creates a new task associated with a specific user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/users/{user_id}/tasks:
+    get:
+      summary: Get all tasks for a user
+      description: Retrieves all tasks associated with a specific user
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user whose tasks to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of user's tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/users/{user_id}/tasks/{task_id}:
+    get:
+      summary: Get a specific task
+      description: Retrieves a specific task by its ID and user ID
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user who owns the task
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a task
+      description: Updates an existing task with new information
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user who owns the task
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a task
+      description: Removes a task from the system
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user who owns the task
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Task deleted successfully
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+        - user_id
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: Title of the task
+        description:
+          type: string
+          description: Detailed description of the task
+        user_id:
+          type: integer
+          description: ID of the user creating the task
+      example:
+        title: Buy groceries
+        description: Need to buy milk, bread, and eggs
+        user_id: 1
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: Updated title of the task
+        description:
+          type: string
+          description: Updated description of the task
+        completed:
+          type: boolean
+          description: Updated completion status of the task
+      example:
+        title: Buy groceries
+        description: Need to buy milk, bread, eggs, and cheese
+        completed: true
+
+    TaskResponse:
+      type: object
+      required:
+        - id
+        - title
+        - completed
+        - user_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the task
+        title:
+          type: string
+          description: Title of the task
+        description:
+          type: string
+          description: Detailed description of the task
+        completed:
+          type: boolean
+          description: Completion status of the task
+        user_id:
+          type: integer
+          description: ID of the user who owns the task
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the task was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the task was last updated
+      example:
+        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        title: Buy groceries
+        description: Need to buy milk, bread, and eggs
+        completed: false
+        user_id: 1
+        created_at: "2026-01-15T10:30:00Z"
+        updated_at: "2026-01-15T10:30:00Z"
+
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+        status_code:
+          type: integer
+          description: HTTP status code
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the error occurred
+      example:
+        detail: Task not found
+        status_code: 404
+        timestamp: "2026-01-15T10:30:00Z"

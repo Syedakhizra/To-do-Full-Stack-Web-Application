@@ -1,0 +1,307 @@
+openapi: 3.0.3
+info:
+  title: Todo Authentication API
+  description: Authentication and Authorization API for Todo Full-Stack Web Application
+  version: 1.0.0
+  contact:
+    name: Todo Auth Support
+    email: support@todoapp.example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.todoapp.example.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from Better Auth after successful authentication
+
+  schemas:
+    AuthVerifyResponse:
+      type: object
+      required:
+        - authenticated
+        - user_id
+        - email
+      properties:
+        authenticated:
+          type: boolean
+          description: Whether the token is valid and user is authenticated
+        user_id:
+          type: integer
+          description: Unique identifier of the authenticated user
+        email:
+          type: string
+          format: email
+          description: Email address of the authenticated user
+      example:
+        authenticated: true
+        user_id: 1
+        email: user@example.com
+
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+        status_code:
+          type: integer
+          description: HTTP status code
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the error occurred
+      example:
+        detail: Invalid token
+        status_code: 401
+        timestamp: "2026-01-15T10:30:00Z"
+
+paths:
+  /api/v1/auth/verify:
+    post:
+      summary: Verify JWT token validity
+      description: Verify if the provided JWT token is valid and return user information
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Token is valid and user is authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthVerifyResponse'
+        '401':
+          description: Token is invalid or has expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/tasks:
+    post:
+      summary: Create a new task (authenticated)
+      description: Creates a new task associated with the authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                  description: Title of the task
+                description:
+                  type: string
+                  description: Detailed description of the task
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../1-backend-tasks/planning/contracts/openapi.yaml#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/users/me/tasks:
+    get:
+      summary: Get tasks for authenticated user
+      description: Retrieves all tasks associated with the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of user's tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../1-backend-tasks/planning/contracts/openapi.yaml#/components/schemas/TaskResponse'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/users/me/tasks/{task_id}:
+    get:
+      summary: Get a specific task (authenticated)
+      description: Retrieves a specific task by its ID for the authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../1-backend-tasks/planning/contracts/openapi.yaml#/components/schemas/TaskResponse'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - user does not own this task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a task (authenticated)
+      description: Updates an existing task with new information for the authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../1-backend-tasks/planning/contracts/openapi.yaml#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../1-backend-tasks/planning/contracts/openapi.yaml#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - user does not own this task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a task (authenticated)
+      description: Removes a task from the system for the authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Task deleted successfully
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - user does not own this task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
