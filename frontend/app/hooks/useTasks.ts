@@ -55,9 +55,8 @@ export const useTasks = () => {
       setLoading(true);
       setError(null);
 
-      // Remove user_id from taskData since backend assigns it from the authenticated user
-      const { user_id, ...taskWithoutUserId } = taskData;
-      const response = await apiClient.put<Task>(`/api/v1/users/me/tasks/${taskId}`, taskWithoutUserId);
+      // Pass taskData directly since it doesn't include user_id
+      const response = await apiClient.put<Task>(`/api/v1/users/me/tasks/${taskId}`, taskData);
 
       // Update the task in the local state
       setTasks(tasks.map(task =>

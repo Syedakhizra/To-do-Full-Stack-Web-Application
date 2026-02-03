@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 // Create the base axios instance with default configuration
 const apiClient: AxiosInstance = axios.create({
@@ -11,13 +11,11 @@ const apiClient: AxiosInstance = axios.create({
 
 // Request interceptor to add JWT token to all requests
 apiClient.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('access_token');
 
     if (token) {
-      if (!config.headers) {
-        config.headers = {};
-      }
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 

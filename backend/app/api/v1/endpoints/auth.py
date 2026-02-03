@@ -21,6 +21,26 @@ class RegisterRequest(BaseModel):
     password: str
 
 
+def create_access_token_for_user(user: User) -> str:
+    """
+    Create an access token for the given user
+    """
+    from app.auth.jwt import create_access_token
+
+    data = {
+        "user_id": user.id,
+        "email": user.email,
+        "sub": str(user.id)
+    }
+
+    token = create_access_token(
+        data=data,
+        expires_delta=timedelta(days=7)  # 7 days expiry
+    )
+
+    return token
+
+
 router = APIRouter()
 
 
@@ -96,23 +116,3 @@ def verify_auth_token(current_user: dict = Depends(get_current_user)):
         "user_id": current_user["user_id"],
         "email": current_user.get("email")
     }
-
-
-def create_access_token_for_user(user: User) -> str:
-    """
-    Create an access token for the given user
-    """
-    from app.auth.jwt import create_access_token
-
-    data = {
-        "user_id": user.id,
-        "email": user.email,
-        "sub": str(user.id)
-    }
-
-    token = create_access_token(
-        data=data,
-        expires_delta=timedelta(days=7)  # 7 days expiry
-    )
-
-    return token
